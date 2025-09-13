@@ -8,6 +8,7 @@ import threading
 from pynput.keyboard import Key, Listener
 from pynput import mouse
 import pyautogui
+from PIL import Image
 from CohereAgent import CohereAgent
 
 from dotenv import load_dotenv
@@ -61,7 +62,8 @@ class InputTracker:
                 pre_image = self.past_2_screenshots[0][0]
 
             pre_image_name = f"image_files/pre_actions_{self.action_num}.png"
-            pre_image.save(pre_image_name, quality = 30)
+            low_res_pre_image = pre_image.resize((pre_image.width//2, pre_image.height//2), Image.LANCZOS)
+            low_res_pre_image.save(pre_image_name, quality = 1)
         else:
             pre_image_name = "None"
 
@@ -79,7 +81,9 @@ class InputTracker:
 
     def take_screenshot(self, file_name="test_screenshot.png"):
         screen_shot = pyautogui.screenshot()
-        screen_shot.save(file_name, quality = 30)
+        screen_shot.save(file_name, quality = 1)
+        low_res_screen_shot = screen_shot.resize((screen_shot.width//2, screen_shot.height//2), Image.LANCZOS)
+        low_res_screen_shot.save(file_name, quality = 1)
         # self.queue.put("Taken screenshot")
 
         # print(self.queue.get())
