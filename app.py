@@ -23,6 +23,7 @@ class InputTracker:
         self.present_action = ""
         self.last_image_time = time.time()
         self.past_2_screenshots = []
+        self.shortcut_keys = []
 
         self.screen_width, self.screen_height = pyautogui.size()
         self.remove_all_images()
@@ -73,11 +74,14 @@ class InputTracker:
             pre_image_name,
             image_name
         ]
+        print(f"{self.action_num}. {action}")
+
         self.cohere_agent.add_keystroke_action_set(action, self.action_num)
 
         # self.queue.put(f"{self.action_num}: {action}")
         self.present_action = ""
         self.action_num += 1
+        self.shortcut_keys = []
 
     def take_screenshot(self, file_name="test_screenshot.png"):
         screen_shot = pyautogui.screenshot()
@@ -85,22 +89,30 @@ class InputTracker:
         low_res_screen_shot = screen_shot.resize((screen_shot.width//2, screen_shot.height//2), Image.LANCZOS)
         low_res_screen_shot.save(file_name, quality = 1)
         # self.queue.put("Taken screenshot")
-
+        print("Taken screenshot")
         # print(self.queue.get())
 
     def on_press(self, key):
         try:
-            self.present_action += str(key.char)
+            if self.shortcut_keys and self.shortcut_keys != [Key.shift]:
+                self.seperatable_actions("SHORTCUT: " + "+".join(self.shortcut_keys) + "+" + str(key.char))
+            else:
+                self.present_action += str(key.char)
         except AttributeError:
-            if key == Key.enter:
+            if key in [Key.enter]:
                 self.seperatable_actions("PRESS: " + str(key))
+            elif key in [Key.cmd, Key.ctrl]:
+                if self.present_action:
+                    self.seperatable_actions("PRESS: " + str(key))
+                self.shortcut_keys.append(str(key))
+            elif key == Key.shift:
+                self.shortcut_keys.append(str(key))
             elif key == Key.backspace:
                 if len(self.present_action) > 0:
                     self.present_action = self.present_action[:-1]
 
     def on_release(self, key):
-        if key == Key.esc:
-            return False
+        pass
 
     def on_click(self, x, y, button, pressed):
         if pressed:
