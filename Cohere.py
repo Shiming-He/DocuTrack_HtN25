@@ -73,6 +73,7 @@ for step in processed_actions:
 instructions += "\\end{enumerate}"
 
 doctype = "md"
+difficulty = "intermediate"
 
 if(doctype == "Latex"):
     # Ask Cohere to output latex documentation
@@ -80,6 +81,9 @@ if(doctype == "Latex"):
     Fill in this LaTeX template using the provided instructions.
 
     Instructions (already ordered and processed):{instructions}
+
+    The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
+    For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
 
     Here are some specific custom requests for the document
     - Make sure to only output the latex docuemntation with nothing else.
@@ -143,8 +147,11 @@ elif(doctype == "md"):
     message = f"""
         You are an AI assistant that generates concise, professional, and well-formatted README.md documentation.
 
-        Given the following action information:
-        {instructions}
+        Given the following action information:{instructions}
+
+        The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
+        For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
+
 
         Write a README.md file in Markdown format that summarizes the steps. Follow this structure:
 
