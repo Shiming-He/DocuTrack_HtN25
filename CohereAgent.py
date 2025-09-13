@@ -24,6 +24,7 @@ class CohereAgent:
     
     def __init__(self, API_KEY, model = "c4ai-aya-vision-32b"):
         # init cohere client
+        self.API_KEY =API_KEY
         self.co_client = cohere.ClientV2(API_KEY)
         self.model = model
         inital_message = {
@@ -57,7 +58,7 @@ Instructions:
                                )
                                """)
         # add some data in 
-        print(json.dumps([inital_message]))
+        # print(json.dumps([inital_message]))
         db_cursor.execute("INSERT INTO agent_messages (messages) VALUES (?)", (json.dumps(inital_message),))
 
         db_conn.commit()
@@ -87,7 +88,7 @@ Instructions:
     def add_keystroke_action_set(self, action, action_num):
 
         if action_num > 0:
-            print('hi')
+            # print('hi')
             # add the set of messages that correspond to the actions that occured
             system_message = {
                 "role" : "system",
@@ -130,8 +131,8 @@ Instructions:
                     ]
                 }
             
-
-            response = self.co_client.chat(
+            co_client = cohere.ClientV2(self.API_KEY)
+            response = co_client.chat(
                 messages=[system_message, single_set_messgae],
                 #model="command",
                 model=self.model,
