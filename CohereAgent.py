@@ -140,7 +140,7 @@ Instructions:
             )
 
 
-            self.save_message(response)
+            self.save_message({"role": "user", "content" : response.message.content[0].text})
             # print(len(self.list_of_messages))
 
 
@@ -186,7 +186,7 @@ Instructions:
 
 
         # Call Cohere chat
-        # print(self.get_messages())
+        print(len(self.get_messages()))
         response = self.co_client.chat(
             messages=self.get_messages(),
             #model="command",
