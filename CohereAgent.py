@@ -99,7 +99,7 @@ Your role: Analyze this set to produce a detailed and structured explanation of 
 Instructions:
 - Compare earliest and latest screenshots carefully to identify changes.
 - Include all relevant observations:
-  - Cursor movements: starting/ending positions, icon changes
+  - Cursor movements: starting/ending positions, icon changes (Cursor postion (x and y) is passed as a number between 0 and 1, with 1 being the full extent of the screen)
   - Active window/tab changes
   - Text changes: per-character typing, block insertion, paste, or autocomplete
   - Selections or dragged items

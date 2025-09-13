@@ -104,7 +104,7 @@ class InputTracker:
 
     def on_click(self, x, y, button, pressed):
         if pressed:
-            self.seperatable_actions(f"MOUSE CLICK: {button} ({x/self.screen_width}, {y/self.screen_height})")
+            self.seperatable_actions(f"MOUSE CLICK: {button} at ({x/self.screen_width}, {y/self.screen_height})")
 
     def regular_interval_screenshot(self):
         screen_shot = pyautogui.screenshot()
