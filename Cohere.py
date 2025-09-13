@@ -1,8 +1,16 @@
 import cohere
 import base64
+import os
+import shutil
+import aspose.pdf as ap
 
 # Initialize Cohere client
 co = cohere.Client("g7RUPaPLEX9HWzrORaU1PJkTZHSVRx0Uu8eOVLPY")
+options = ap.TeXLoadOptions()
+
+OUTPUT_DIR = "doc_output"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 def validate_latex(latex_code: str) -> str:
     if "\\begin{document}" not in latex_code:
@@ -52,62 +60,131 @@ for action in actions:
     if action["type"] == "text":
         processed_actions.append(action["content"])
     elif action["type"] == "image":
+        filename = os.path.basename(action["path"])
+        out_path = os.path.join(OUTPUT_DIR, filename)
+        shutil.copy(action["path"], out_path)   # copy image to output folder
+        
         caption = generate_text(action["path"], "Concisely describe the mouse/keyboard action performed in this image as if it is part of a tutorial.")
         processed_actions.append(f"{caption}\n\\includegraphics[width=0.9\\textwidth]{{{action['path']}}}")
 
-instructions_latex = "\\begin{enumerate}\n"
+instructions = "\\begin{enumerate}\n"
 for step in processed_actions:
-    instructions_latex += f"  \\item {step}\n"
-instructions_latex += "\\end{enumerate}"
+    instructions += f"  \\item {step}\n"
+instructions += "\\end{enumerate}"
+
+doctype = "md"
+
+if(doctype == "Latex"):
+    # Ask Cohere to output latex documentation
+    message = f"""
+    Fill in this LaTeX template using the provided instructions.
+
+    Instructions (already ordered and processed):{instructions}
+
+    Here are some specific custom requests for the document
+    - Make sure to only output the latex docuemntation with nothing else.
+    - For Instructions section, use the enumerate environment to make an ordered list for each action.
+    - Do not just simply list the actions, provide concise explanation/interpretation for what each step means.
+    - Conclusion should be only about the instructions, not this program. 
+
+    TEMPLATE:
+    \\documentclass[12pt]{{article}}
+    \\usepackage{{geometry}}
+    \\usepackage{{graphicx}}
+    \\geometry{{margin=1in}}
+
+
+    \\title{{Automatic Documentation}}
+    \\author{{AI Assistant}}
+    \\date{{\\today}}
+
+    \\begin{{document}}
+    \\maketitle
+
+    \\section*{{Introduction}}
+    <write intro here>
+
+    \\section*{{Instructions}}
+    {instructions}
+
+    \\section*{{Conclusion}}
+    <write conclusion here>
+
+    \\end{{document}}
+
+    """
+
+    # Call Cohere chat
+    response = co.chat(
+        message=message,
+        #model="command",
+        model="c4ai-aya-vision-8b",
+        temperature=0.25
+    )
+
+    response.text = validate_latex(response.text)
+
+    # Print the explanation
+    print(response.text)
+
+    tex_path = os.path.join(OUTPUT_DIR, "output.tex")
+    with open(tex_path, "w", encoding="utf-8") as f:
+        f.write(response.text)
+
+    # Create a Document class object
+    document = ap.Document(tex_path , options)
+
+    # Convert Latex to PDF
+    document.save("tex-to-pdf.pdf")
+
+elif(doctype == "md"):
 
 # Ask Cohere to output latex documentation
-message = f"""
-Fill in this LaTeX template using the provided instructions.
+    message = f"""
+        You are an AI assistant that generates concise, professional, and well-formatted README.md documentation.
 
-Instructions (already ordered and processed):{instructions_latex}
+        Given the following action information:
+        {instructions}
 
-Here are some specific custom requests for the document
-- Make sure to only output the latex docuemntation with nothing else.
-- For Instructions section, use the enumerate environment to make an ordered list for each action.
-- Do not just simply list the actions, provide concise explanation/interpretation for what each step means.
-- Conclusion should be only about the instructions, not this program. 
+        Write a README.md file in Markdown format that summarizes the steps. Follow this structure:
 
-TEMPLATE:
-\\documentclass[12pt]{{article}}
-\\usepackage{{geometry}}
-\\usepackage{{graphicx}}
-\\geometry{{margin=1in}}
+        # Project Overview
+        A short description of what the actions accomplish.
 
+        # Requirements
+        List any tools, libraries, or prerequisites.
 
-\\title{{Automatic Documentation}}
-\\author{{AI Assistant}}
-\\date{{\\today}}
+        # Steps Performed
+        Summarize the actions into numbered steps.
+        If any step references a screenshot or image, include it using Markdown image syntax:
+        `![Description](filename.png)`
 
-\\begin{{document}}
-\\maketitle
+        # Notes
+        Optional tips, troubleshooting, or clarifications.
 
-\\section*{{Introduction}}
-<write intro here>
+        # Example Output
+        (Optional) A short code snippet, command, or screenshot of final result.
 
-\\section*{{Instructions}}
-{instructions_latex}
+        Formatting Rules:
+        - Always use Markdown headers.
+        - Use bullet points (-) for unordered lists and 1., 2., 3. for ordered steps.
+        - Insert images where appropriate using relative paths like `images/step1.png`.
+        - Keep explanations short and professional.
+        - Make sure to only output the md. 
 
-\\section*{{Conclusion}}
-<write conclusion here>
+        Now, generate the README.md. 
+    """
 
-\\end{{document}}
+    # Call Cohere chat
+    response = co.chat(
+        message=message,
+        #model="command",
+        model="c4ai-aya-vision-8b",
+        temperature=0.25
+    ) 
 
-"""
+    # Print the explanation
+    print(response.text)
 
-# Call Cohere chat
-response = co.chat(
-    message=message,
-    #model="command",
-    model="c4ai-aya-vision-8b",
-    temperature=0.25
-)
-
-response.text = validate_latex(response.text)
-
-# Print the explanation
-print(response.text)
+    with open(os.path.join(OUTPUT_DIR, "README.md"), "w", encoding="utf-8") as f:
+        f.write(response.text)
