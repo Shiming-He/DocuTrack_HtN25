@@ -27,20 +27,23 @@ class InputTracker:
         self.remove_all_images()
         self.seperatable_actions("Initial State")
 
+    def start_listeners(self):
         # constant screenshot thread
-        constant_image_taker = ConstantPhotoTacker(self)
-        constant_image_taker.start()
+        self.constant_image_taker = ConstantPhotoTacker(self)
+        self.constant_image_taker.start()
 
         # mouse + keyboard listeners
-        mouse_listener = mouse.Listener(on_click=self.on_click)
-        mouse_listener.start()
+        self.mouse_listener = mouse.Listener(on_click=self.on_click)
+        self.mouse_listener.start()
 
-        keyboard_listener = Listener(on_press=self.on_press, on_release=self.on_release)
-        keyboard_listener.start()
+        self.keyboard_listener = Listener(on_press=self.on_press, on_release=self.on_release)
+        self.keyboard_listener.start()
 
-        keyboard_listener.join()
-        mouse_listener.join()
-        constant_image_taker.join()
+        # Wait for threads to finish
+        self.keyboard_listener.join()
+        self.mouse_listener.join()
+        self.constant_image_taker.join()
+
 
     def remove_all_images(self, first_part="image_files/*actions_"):
         for file in glob.glob(first_part + "*.png"):
@@ -70,14 +73,14 @@ class InputTracker:
         ]
         self.cohere_agent.add_keystroke_action_set(action, self.action_num)
 
-        self.queue.put(f"{self.action_num}: {action}")
+        # self.queue.put(f"{self.action_num}: {action}")
         self.present_action = ""
         self.action_num += 1
 
     def take_screenshot(self, file_name="test_screenshot.png"):
         screen_shot = pyautogui.screenshot()
         screen_shot.save(file_name)
-        self.queue.put("Taken screenshot")
+        # self.queue.put("Taken screenshot")
 
         # print(self.queue.get())
 
@@ -118,8 +121,11 @@ class ConstantPhotoTacker(threading.Thread):
             self.input_tracker.regular_interval_screenshot()
 
 # process wrapper
-def input_listener(queue, cohere_agent):
-    InputTracker(queue, cohere_agent)
+def input_listener(queue):
+
+    cohere_agent = CohereAgent(os.getenv("COHERE_API_KEY"))
+    tracker = InputTracker(queue, cohere_agent)
+    tracker.start_listeners()  # Start all threads inside the child process
 
 # GUI
 class Tracker:
@@ -170,7 +176,7 @@ class Tracker:
     def start_listening(self):
         if not self.process:
             os.makedirs("image_files", exist_ok=True)
-            self.process = multiprocessing.Process(target=input_listener, args=(self.queue, self.cohere_agent))
+            self.process = multiprocessing.Process(target=input_listener, args=(self.queue,))
             self.process.start()
             print("InputTracker started.")
 
@@ -183,7 +189,7 @@ class Tracker:
 
     def poll_queue(self):
         while not self.queue.empty():
-            msg = self.queue.get()
+            # msg = self.queue.get()
             print(msg)
         self.root.after(100, self.poll_queue)
 
@@ -192,11 +198,15 @@ class Tracker:
 if __name__ == "__main__":
     load_dotenv()
     multiprocessing.set_start_method("spawn")  # macOS requirement
-    queue = multiprocessing.Queue()
+    queue = multiprocessing.Manager().Queue()
+
 
     root = tk.Tk()
     app = Tracker(root, queue, CohereAgent(os.getenv("COHERE_API_KEY")))
     root.mainloop()
+
+    # process = multiprocessing.Process(target=input_listener, args=(queue,))
+    # process.start()
     
 
     # input_listener(queue, CohereAgent(os.getenv("COHERE_API_KEY")) )
