@@ -22,40 +22,24 @@ def convert_image_to_base64(image_path):
 
 class CohereAgent:
     
-    def __init__(self, API_KEY, model = "embed-v4.0"):
+    def __init__(self, API_KEY, model = "c4ai-aya-vision-32b"):
         # init cohere client
         self.co_client = cohere.ClientV2(API_KEY)
         self.model = model
         inital_message = {
-            "role" :"system", "content" : '''You are given one or more sets of user actions, each consisting of two screenshots taken about 0.5 seconds apart and a record of recent mouse clicks and keyboard input. Each set is presented in chronological order, earliest screenshot first, latest screenshot second.
+            "role" :"system", "content" : '''You have received a series of detailed explanations describing user actions from multiple sets of screenshots and prior input. Your task is to generate a full LaTeX document documenting all sets in chronological order, based on these explanations.
 
-Your role: You are tasked with writing documentation for your team. Use the recorded user actions to generate clear and concise documentation, but do not produce any output until explicitly asked to generate a LaTeX document.
-
-Task: Process each set sequentially, recording and interpreting all visual and input changes internally for later inclusion in LaTeX documentation. Do not produce output sentences or LaTeX for individual sets at this stage.
-
-Step 1 – Earliest screenshot:
-Record internally only observable facts: cursor position/icon, active window/app, highlighted/focused UI, caret presence/location, scrollbar position/content, visible text or terminal output, open menus/dialogs/tooltips. Do not infer actions yet.
-
-Step 2 – Latest screenshot:
-Compare to the first. Record differences and plausible causes for quick actions (clicks, gestures, keyboard shortcuts, scrolls). Consider prior input for that set: did any recent click or keystroke plausibly trigger the change? Observe and store:
-- Cursor movement: direction/target, icon changes
-- Active window/tab changes, proximity of cursor
-- New highlights, tabs, windows, dialogs
-- Text changes: per-character, whole-block, paste/autocomplete
-- Selection changes, dragged items
-- Scrollbar/content shift without cursor movement
-- Context menus, tooltips, delayed UI
-- If no cursor visible, note “no cursor movement visible” and allow touch/gesture
-
-Checklist (in order): movement, icon, active window, new text, new tab, content shift, menu/tooltip, drag, no cursor, delayed UI, prior mouse/keyboard input.
-
-Timing rules: favor quick actions unless evidence shows drag/multi-step; instant text = paste/autocomplete; new tab without content switch = background tab.
-
-Processing rules:
-- Maintain chronological order of sets.
-- Do not produce any immediate output per set.
-- Store all observed facts, inferred actions, and causal links internally.
-- Later, when prompted, generate a full LaTeX document documenting all sets and actions based on this internal analysis.
+Instructions:
+- Use the explanations as the authoritative source for each set.
+- Maintain chronological order of the sets.
+- Clearly label each set in the document (e.g., "Set 1", "Set 2", etc.).
+- Include all relevant details about cursor movements, selections, text input, scrolls, menu/dialog interactions, and inferred user actions.
+- Ensure the LaTeX document is well-structured, clear, and concise.
+- Include sections, enumerated lists, or subsections for readability.
+- Format code blocks, terminal output, or text input using appropriate LaTeX environments (e.g., verbatim or lstlisting) if mentioned in the explanations.
+- Avoid adding information not present in the explanations.
+- Produce the complete LaTeX output in one response.
+- Do not reference screenshots directly; rely entirely on the provided explanations.
 '''
          } # add the system preset
         
@@ -105,8 +89,29 @@ Processing rules:
         if action_num > 0:
             print('hi')
             # add the set of messages that correspond to the actions that occured
-            self.save_message(
-                {"role" : "user", "content" :
+            system_message = {
+                "role" : "system",
+                "content" : """You are given a single set of user actions, consisting of two screenshots taken about 0.5 seconds apart and a record of recent mouse clicks and keyboard input. The first screenshot is the earliest, the second is the latest.
+
+Your role: Analyze this set to produce a detailed and structured explanation of what occurred, including all relevant context, so it can be used later to generate a LaTeX document. The explanation should be clear, concise, and complete enough for someone else to understand the sequence of user actions and their effects.
+
+Instructions:
+- Compare earliest and latest screenshots carefully to identify changes.
+- Include all relevant observations:
+  - Cursor movements: starting/ending positions, icon changes
+  - Active window/tab changes
+  - Text changes: per-character typing, block insertion, paste, or autocomplete
+  - Selections or dragged items
+  - Scrolling or content shifts
+  - Menus, dialogs, tooltips, or hover states
+  - Prior mouse or keyboard input that likely caused the changes
+- Include your inference of the most likely user action(s) and any timing/plausibility notes.
+- Present the explanation as a concise paragraph or structured sentences (3–6 sentences recommended).
+- Do not generate LaTeX at this stage.
+- Focus only on this single set; do not reference other sets."""
+            }
+            
+            single_set_messgae = {"role" : "user", "content" :
                      [
                         {"type": "text", "text": f"SET {action_num}:"},
                         {"type": "text", "text": "- Earliest Screenshot: "},
@@ -124,7 +129,17 @@ Processing rules:
                         }
                     ]
                 }
+            
+
+            response = self.co_client.chat(
+                messages=[system_message, single_set_messgae],
+                #model="command",
+                model=self.model,
+                temperature=0.2
             )
+
+
+            self.save_message(response)
             # print(len(self.list_of_messages))
 
 
