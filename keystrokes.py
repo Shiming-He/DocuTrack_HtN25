@@ -52,6 +52,7 @@ class KeyTracker:
 
 
 
+
     def remove_all_images(self, first_part = "image_files/*actions_"):
         # print(str(first_part + "*.png")
         for file in glob.glob(first_part + "*.png"):
