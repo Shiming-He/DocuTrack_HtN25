@@ -1,6 +1,5 @@
 import cohere
 import base64
-from dotenv import load_dotenv
 
 
 
@@ -59,27 +58,29 @@ Processing rules:
         self.model = model
 
     def add_keystroke_action_set(self, action, action_num):
-        # add the set of messages that correspond to the actions that occured
-        self.list_of_messages += [
-            {"role": "user", 
-                "content": [
-                    {"type": "text", "text": f"SET {action_num}:"},
-                    {"type": "text", "text": "- Earliest Screenshot: "},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": convert_image_to_base64(action[2])},
-                    },
-                    {"type": "text", "text": "- Latest Screenshot: "},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": convert_image_to_base64(action[3])},
-                    },
-                    {
-                        "type": "text", "text": f"- Recent Input: {action[0]} and {action[1]}"
-                    }
-                ],
-             }
-        ]
+
+        if action_num > 0:
+            # add the set of messages that correspond to the actions that occured
+            self.list_of_messages += [
+                {"role": "user", 
+                    "content": [
+                        {"type": "text", "text": f"SET {action_num}:"},
+                        {"type": "text", "text": "- Earliest Screenshot: "},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": convert_image_to_base64(action[2])},
+                        },
+                        {"type": "text", "text": "- Latest Screenshot: "},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": convert_image_to_base64(action[3])},
+                        },
+                        {
+                            "type": "text", "text": f"- Recent Input: {action[0]} and {action[1]}"
+                        }
+                    ],
+                }
+            ]
 
 
     def return_final_LATEX(self):

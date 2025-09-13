@@ -62,14 +62,15 @@ class InputTracker:
         else:
             pre_image_name = "None"
 
-        self.cohere_agent.add_keystroke_action_set([
+        action  = [
             "TYPE: " + self.present_action,
             important_action,
             pre_image_name,
             image_name
-        ], self.action_num)
+        ]
+        self.cohere_agent.add_keystroke_action_set(action, self.action_num)
 
-        self.queue.put(f"{self.action_num}: {self.actions_set[-1]}")
+        self.queue.put(f"{self.action_num}: {action}")
         self.present_action = ""
         self.action_num += 1
 
@@ -77,6 +78,8 @@ class InputTracker:
         screen_shot = pyautogui.screenshot()
         screen_shot.save(file_name)
         self.queue.put("Taken screenshot")
+
+        # print(self.queue.get())
 
     def on_press(self, key):
         try:
@@ -115,8 +118,8 @@ class ConstantPhotoTacker(threading.Thread):
             self.input_tracker.regular_interval_screenshot()
 
 # process wrapper
-def input_listener(queue):
-    InputTracker(queue)
+def input_listener(queue, cohere_agent):
+    InputTracker(queue, cohere_agent)
 
 # GUI
 class Tracker:
@@ -194,3 +197,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = Tracker(root, queue, CohereAgent(os.getenv("COHERE_API_KEY")))
     root.mainloop()
+    
+
+    # input_listener(queue, CohereAgent(os.getenv("COHERE_API_KEY")) )
+
