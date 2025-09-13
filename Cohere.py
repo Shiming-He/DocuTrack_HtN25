@@ -143,30 +143,33 @@ elif(doctype == "md"):
     message = f"""
         You are an AI assistant that generates concise, professional, and well-formatted README.md documentation.
 
-        Given the following action information:{instructions}
+        Given the following action information:
+        {instructions}
 
         Write a README.md file in Markdown format that summarizes the steps. Follow this structure:
 
         # Project Overview
-        A short description of what the actions accomplish. Explain the purpose in 2–4 sentences.
+        A short description of what the actions accomplish.
 
         # Requirements
-        List any tools, libraries, or prerequisites the user needs to reproduce the actions. Use bullet points.
+        List any tools, libraries, or prerequisites.
 
         # Steps Performed
-        Summarize the recorded user actions into clear, sequential steps. Use a numbered list. Each step should be 1–2 sentences maximum, written in simple, professional language.
+        Summarize the actions into numbered steps.
+        If any step references a screenshot or image, include it using Markdown image syntax:
+        `![Description](filename.png)`
 
         # Notes
-        Optional remarks, tips, or troubleshooting points (if relevant).
+        Optional tips, troubleshooting, or clarifications.
 
         # Example Output
-        (Optional) Provide a small code snippet, command, or screenshot description that represents the final result.
+        (Optional) A short code snippet, command, or screenshot of final result.
 
         Formatting Rules:
-        - Always use Markdown headers (#, ##).
-        - Use bullet points (-) for lists and numbered lists (1., 2., 3.) for ordered steps.
-        - Keep explanations clear and concise.
-        - Do not include raw action logs — only polished descriptions.
+        - Always use Markdown headers.
+        - Use bullet points (-) for unordered lists and 1., 2., 3. for ordered steps.
+        - Insert images where appropriate using relative paths like `images/step1.png`.
+        - Keep explanations short and professional.
         - Make sure to only output the md. 
 
         Now, generate the README.md. 
