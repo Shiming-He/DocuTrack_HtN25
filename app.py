@@ -8,10 +8,14 @@ import threading
 from pynput.keyboard import Key, Listener
 from pynput import mouse
 import pyautogui
+from CohereAgent import CohereAgent
+
+from dotenv import load_dotenv
 
 
 class InputTracker:
-    def __init__(self, queue):
+    def __init__(self, queue, cohere_agent: CohereAgent):
+        self.cohere_agent = cohere_agent
         self.queue = queue
         self.actions_set = []
         self.action_num = 0
@@ -48,7 +52,7 @@ class InputTracker:
         self.take_screenshot(image_name)
 
         if len(self.past_2_screenshots):
-            if self.past_2_screenshots[-1][1] > 0.3:
+            if time_stamp - self.past_2_screenshots[-1][1] > 0.3:
                 pre_image = self.past_2_screenshots[-1][0]
             else:
                 pre_image = self.past_2_screenshots[0][0]
@@ -58,12 +62,12 @@ class InputTracker:
         else:
             pre_image_name = "None"
 
-        self.actions_set.append([
+        self.cohere_agent.add_keystroke_action_set([
             "TYPE: " + self.present_action,
             important_action,
             pre_image_name,
             image_name
-        ])
+        ], self.action_num)
 
         self.queue.put(f"{self.action_num}: {self.actions_set[-1]}")
         self.present_action = ""
@@ -116,10 +120,12 @@ def input_listener(queue):
 
 # GUI
 class Tracker:
-    def __init__(self, root, queue):
+    def __init__(self, root, queue, cohere_agent: CohereAgent):
         self.root = root
         self.queue = queue
         self.process = None
+
+        self.cohere_agent = cohere_agent
 
         root.overrideredirect(True)
         root.attributes("-topmost", True)
@@ -161,7 +167,7 @@ class Tracker:
     def start_listening(self):
         if not self.process:
             os.makedirs("image_files", exist_ok=True)
-            self.process = multiprocessing.Process(target=input_listener, args=(self.queue,))
+            self.process = multiprocessing.Process(target=input_listener, args=(self.queue, self.cohere_agent))
             self.process.start()
             print("InputTracker started.")
 
@@ -170,6 +176,7 @@ class Tracker:
             self.process.terminate()
             self.process = None
             print("InputTracker stopped.")
+            self.cohere_agent.return_final_LATEX()
 
     def poll_queue(self):
         while not self.queue.empty():
@@ -178,10 +185,12 @@ class Tracker:
         self.root.after(100, self.poll_queue)
 
 
+
 if __name__ == "__main__":
+    load_dotenv()
     multiprocessing.set_start_method("spawn")  # macOS requirement
     queue = multiprocessing.Queue()
 
     root = tk.Tk()
-    app = Tracker(root, queue)
+    app = Tracker(root, queue, CohereAgent(os.getenv("COHERE_API_KEY")))
     root.mainloop()
