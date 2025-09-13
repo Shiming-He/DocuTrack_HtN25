@@ -32,32 +32,39 @@ def generate_text(image_path, message):
                 ],
             }
         ],
-        temperature=0.3,
+        temperature=0.15,
     )
-
-    print(response.message.content[0].text)
-
+    return response.message.content[0].text.strip()
 
 # Example sequence of keystrokes (you can change this to test)
 actions = [
-    "Open browser",
-    "Move cursor to email field",
-    "Type: sampleemail@gmail.com",
-    
-    "Press ENTER",
-    "Type: samplepassword123",
-    "Move cursor to login button",
-    "Left Click",
-    "Press Ctrl+C",
-    "Press Ctrl+V"
+    {"type": "text", "content": "Open browser"},
+    {"type": "image", "path": "actions.png"},
+    {"type": "text", "content": "Type: sampleemail@gmail.com"},
+    {"type": "text", "content": "Press ENTER"},
+    {"type": "text", "content": "Type: samplepassword123"},
+    {"type": "text", "content": "Press Ctrl+C"},
 ]
 
-# Join into a single string
-action_sequence = ", ".join(actions)
+# Step 1: Process all actions into rich descriptions
+processed_actions = []
+for action in actions:
+    if action["type"] == "text":
+        processed_actions.append(action["content"])
+    elif action["type"] == "image":
+        caption = generate_text(action["path"], "Concisely describe the mouse/keyboard action performed in this image as if it is part of a tutorial.")
+        processed_actions.append(f"{caption}\n\\includegraphics[width=0.9\\textwidth]{{{action['path']}}}")
+
+instructions_latex = "\\begin{enumerate}\n"
+for step in processed_actions:
+    instructions_latex += f"  \\item {step}\n"
+instructions_latex += "\\end{enumerate}"
 
 # Ask Cohere to output latex documentation
 message = f"""
-Fill in this LaTeX template explaining the following actions performed in professional documentation format: {action_sequence}
+Fill in this LaTeX template using the provided instructions.
+
+Instructions (already ordered and processed):{instructions_latex}
 
 Here are some specific custom requests for the document
 - Make sure to only output the latex docuemntation with nothing else.
@@ -68,7 +75,10 @@ Here are some specific custom requests for the document
 TEMPLATE:
 \\documentclass[12pt]{{article}}
 \\usepackage{{geometry}}
+\\usepackage{{graphicx}}
 \\geometry{{margin=1in}}
+
+
 \\title{{Automatic Documentation}}
 \\author{{AI Assistant}}
 \\date{{\\today}}
@@ -80,7 +90,7 @@ TEMPLATE:
 <write intro here>
 
 \\section*{{Instructions}}
-<write instructions here>
+{instructions_latex}
 
 \\section*{{Conclusion}}
 <write conclusion here>
