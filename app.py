@@ -61,7 +61,7 @@ class InputTracker:
                 pre_image = self.past_2_screenshots[0][0]
 
             pre_image_name = f"image_files/pre_actions_{self.action_num}.png"
-            pre_image.save(pre_image_name)
+            pre_image.save(pre_image_name, quality = 30)
         else:
             pre_image_name = "None"
 
@@ -79,7 +79,7 @@ class InputTracker:
 
     def take_screenshot(self, file_name="test_screenshot.png"):
         screen_shot = pyautogui.screenshot()
-        screen_shot.save(file_name)
+        screen_shot.save(file_name, quality = 30)
         # self.queue.put("Taken screenshot")
 
         # print(self.queue.get())
@@ -117,8 +117,8 @@ class ConstantPhotoTacker(threading.Thread):
 
     def run(self):
         while True:
-            time.sleep(0.5)
             self.input_tracker.regular_interval_screenshot()
+            time.sleep(0.5)
 
 # process wrapper
 def input_listener(queue):
