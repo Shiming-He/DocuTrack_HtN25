@@ -287,7 +287,7 @@ class Tracker:
         self.selected_file_option = tk.StringVar(root)
         self.selected_file_option.set(file_options[0])  # Set a default value
 
-        file_dropdown = tk.OptionMenu(frame, self.selected_file_option, *file_options)
+        file_dropdown = tk.OptionMenu(self.frame, self.selected_file_option, *file_options)
         file_dropdown.pack(side="left", padx=(5, 0))
 
         # Keyboard shortcuts
