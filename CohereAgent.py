@@ -3,8 +3,6 @@ import base64
 import json
 import sqlite3
 
-
-
 def validate_latex(latex_code: str) -> str:
     '''check if the latex has a begining and end'''
     if "\\begin{document}" not in latex_code:
@@ -19,14 +17,13 @@ def convert_image_to_base64(image_path):
         base64_image = f"data:image/jpeg;base64,{base64.b64encode(img_file.read()).decode('utf-8')}"
     return base64_image
 
-
 class CohereAgent:
     
     def __init__(self, API_KEY, model = "c4ai-aya-vision-32b"):
         # init cohere client
-        self.API_KEY =API_KEY
         self.co_client = cohere.ClientV2(API_KEY)
         self.model = model
+        self.API_KEY = API_KEY
         inital_message = {
             "role" :"system", "content" : '''You have received a series of detailed explanations describing user actions from multiple sets of screenshots and prior input. Your task is to generate a full LaTeX document documenting all sets in chronological order, based on these explanations.
 
@@ -58,7 +55,7 @@ Instructions:
                                )
                                """)
         # add some data in 
-        # print(json.dumps([inital_message]))
+        #print(json.dumps([inital_message]))
         db_cursor.execute("INSERT INTO agent_messages (messages) VALUES (?)", (json.dumps(inital_message),))
 
         db_conn.commit()
@@ -88,7 +85,7 @@ Instructions:
     def add_keystroke_action_set(self, action, action_num):
 
         if action_num > 0:
-            # print('hi')
+            #print('hi')
             # add the set of messages that correspond to the actions that occured
             system_message = {
                 "role" : "system",
@@ -132,6 +129,7 @@ Instructions:
                 }
             
             co_client = cohere.ClientV2(self.API_KEY)
+
             response = co_client.chat(
                 messages=[system_message, single_set_messgae],
                 #model="command",
@@ -143,10 +141,12 @@ Instructions:
             self.save_message({"role": "user", "content" : response.message.content[0].text})
             # print(len(self.list_of_messages))
 
-
-    def return_final_LATEX(self):
-        message = {"role" : "user", "content" : """
+    def return_final_LATEX(self, difficulty = "intermediate"):
+        message = {"role" : "user", "content" : f"""
         Now fill in this LaTeX template based on the sets that you have recieved from the user. This is documentation based on what the user completed:
+
+        The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
+        For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
 
         Here are some specific custom requests for the document
         - Make sure to only output the latex docuemntation with nothing else.
@@ -157,7 +157,10 @@ Instructions:
         TEMPLATE:
         \\documentclass[12pt]{{article}}
         \\usepackage{{geometry}}
+        \\usepackage{{graphicx}}
         \\geometry{{margin=1in}}
+
+
         \\title{{Automatic Documentation}}
         \\author{{AI Assistant}}
         \\date{{\\today}}
@@ -182,11 +185,9 @@ Instructions:
 
         # print(len(self.list_of_messages))
 
-
-
-
         # Call Cohere chat
-        print(len(self.get_messages()))
+        # print(self.get_messages())
+        # co_client = cohere.ClientV2(API_KEY)
         response = self.co_client.chat(
             messages=self.get_messages(),
             #model="command",
@@ -198,6 +199,55 @@ Instructions:
 
         # Print the explanation
         print(response.text)
+        return response.text
+
+    def return_final_MD(self, difficulty = "intermediate"):
+        message = {"role" : "user", "content" : f"""
+        You are an AI assistant that generates concise, professional, and well-formatted README.md documentation.
 
 
+        The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
+        For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
 
+
+        Write a README.md file in Markdown format that summarizes the steps. Follow this structure:
+
+        # Project Overview
+        A short description of what the actions accomplish.
+
+        # Requirements
+        List any tools, libraries, or prerequisites.
+
+        # Steps Performed
+        Summarize the actions into numbered steps.
+        If any step references a screenshot or image, include it using Markdown image syntax:
+        `![Description](filename.png)`
+        Use interpreted instructions here as well.
+
+        # Notes
+        Optional tips, troubleshooting, or clarifications.
+
+        # Example Output
+        (Optional) A short code snippet, command, or screenshot of final result.
+
+        Formatting Rules:
+        - Always use Markdown headers.
+        - Use bullet points (-) for unordered lists and 1., 2., 3. for ordered steps.
+        - Insert images where appropriate using relative paths like `images/step1.png`.
+        - Keep explanations short and professional.
+        - Make sure to only output the md. 
+
+        Now, generate the README.md. 
+        """}
+
+        # Call Cohere chat
+        response = self.co.chat(
+            message=message,
+            #model="command",
+            model="c4ai-aya-vision-8b",
+            temperature=0.25
+        ) 
+
+        # Print the explanation
+        print(response.text)
+        return response.text

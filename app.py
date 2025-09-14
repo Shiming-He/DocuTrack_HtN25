@@ -10,12 +10,14 @@ from pynput import mouse
 import pyautogui
 from PIL import Image
 from CohereAgent import CohereAgent
+from convert import latex_to_pdf
 
 from dotenv import load_dotenv
 
 
 class InputTracker:
     def __init__(self, queue, cohere_agent: CohereAgent):
+        self.out_dir = "out"
         self.cohere_agent = cohere_agent
         self.queue = queue
         self.actions_set = []
@@ -47,13 +49,15 @@ class InputTracker:
         self.constant_image_taker.join()
 
 
-    def remove_all_images(self, first_part="image_files/*actions_"):
+    def remove_all_images(self, first_part=None):
+        if first_part is None:
+            first_part = f"{self.out_dir}/*actions_"
         for file in glob.glob(first_part + "*.png"):
             os.remove(file)
 
     def seperatable_actions(self, important_action):
         time_stamp = time.time()
-        image_name = f"image_files/actions_{self.action_num}.png"
+        image_name = f"{self.out_dir}/actions_{self.action_num}.png"
         self.take_screenshot(image_name)
 
         if len(self.past_2_screenshots):
@@ -62,7 +66,7 @@ class InputTracker:
             else:
                 pre_image = self.past_2_screenshots[0][0]
 
-            pre_image_name = f"image_files/pre_actions_{self.action_num}.png"
+            pre_image_name = f"{self.out_dir}/pre_actions_{self.action_num}.png"
             low_res_pre_image = pre_image.resize((pre_image.width//2, pre_image.height//2), Image.LANCZOS)
             low_res_pre_image.save(pre_image_name, quality = 1)
         else:
@@ -125,7 +129,7 @@ class InputTracker:
         else:
             self.past_2_screenshots.append([screen_shot, time.time()])
 
-
+# hello world
 class ConstantPhotoTacker(threading.Thread):
     def __init__(self, input_tracker: InputTracker):
         super().__init__()
@@ -149,6 +153,7 @@ class Tracker:
         self.root = root
         self.queue = queue
         self.process = None
+        self.out_dir = "out"
 
         self.cohere_agent = cohere_agent
 
@@ -191,7 +196,7 @@ class Tracker:
 
     def start_listening(self):
         if not self.process:
-            os.makedirs("image_files", exist_ok=True)
+            os.makedirs(self.out_dir, exist_ok=True)
             self.process = multiprocessing.Process(target=input_listener, args=(self.queue,))
             self.process.start()
             print("InputTracker started.")
@@ -201,15 +206,18 @@ class Tracker:
             self.process.terminate()
             self.process = None
             print("InputTracker stopped.")
-            self.cohere_agent.return_final_LATEX()
+            res = self.cohere_agent.return_final_LATEX()
+            latex_to_pdf(res)
+
 
     def poll_queue(self):
-        while not self.queue.empty():
+        #while not self.queue.empty(): AAAAAAAAAAAAAAaaaaaa
+        
+
+
             # msg = self.queue.get()
-            print(msg)
+            #print(msg)
         self.root.after(100, self.poll_queue)
-
-
 
 if __name__ == "__main__":
     load_dotenv()
