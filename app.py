@@ -135,7 +135,7 @@ class InputTracker:
 
     def on_click(self, x, y, button, pressed):
         if pressed:
-            self.seperatable_actions(f"MOUSE CLICK: {button} ({x/self.screen_width}, {y/self.screen_height})")
+            self.seperatable_actions(f"MOUSE CLICK: {button} ({x}, {y})")
 
     def regular_interval_screenshot(self):
         cursor_pos = pyautogui.position()
@@ -272,7 +272,7 @@ class Tracker:
         # Dropdown menu
         options = ["Beginner", "Intermediate", "Advanced"]
         self.selected_option = tk.StringVar(root)
-        self.selected_option.set(options[0])  # Set a default value
+        self.selected_option.set(options[1])  # Set a default value
 
         self.dropdown = tk.OptionMenu(self.frame, self.selected_option, *options)
         self.dropdown.pack(side="left", padx=(5, 0))
@@ -443,12 +443,13 @@ class Tracker:
     def _process_results(self):
         """Process results in a separate thread"""
         try:
-            files = [f for f in glob.glob(os.path.join(self.out_dir, "*.png"))]
+            files = [f for f in glob.glob(os.path.join(self.out_dir, "actions_*.png"))]
+            files = files[1:]
             print(files)
             if self.selected_file_option.get() == "LATEX":
-                self.res = self.cohere_agent.return_final_LATEX(files)
+                self.res = self.cohere_agent.return_final_LATEX(files, self.get_selection())
             elif self.selected_file_option.get() == ".md":
-                self.res = self.cohere_agent.return_final_MD()
+                self.res = self.cohere_agent.return_final_MD(self.get_selection())
             
             # latex_to_pdf(res)
             # Update status back to idle when processing is complete
