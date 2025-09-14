@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import multiprocessing
 import glob
-import os
+import os 
 import time
 import threading
 from pynput.keyboard import Key, Listener
@@ -11,7 +11,7 @@ import pyautogui
 from PIL import Image
 from CohereAgent import CohereAgent
 from convert import latex_to_pdf
-
+import customtkinter
 from dotenv import load_dotenv
 
 
@@ -94,9 +94,7 @@ class InputTracker:
         low_res_screen_shot.save(file_name, quality = 1)
         # self.queue.put("Taken screenshot")
         print("Taken screenshot")
-        # print(self.queue.get()) aaasdmlkamsdklasd
-
-
+        # print(self.queue.get())
 
     def on_press(self, key):
         try:
@@ -161,13 +159,24 @@ class Tracker:
 
         root.overrideredirect(True)
         root.attributes("-topmost", True)
-        root.geometry("135x50+1200+50")
 
-        bar_bg = "#000000"
-        btn_bg = "#333333"
-        btn_fg = "#ffffff"
-        btn_hover = "#444444"
-        btn_pressed = "#666666"
+        window_width = 240
+        window_height = 50
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        x = (screen_width - window_width) // 2  # Center horizontally
+        y = screen_height - window_height - 70  # 60px margin from bottom
+        root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+        root.attributes("-alpha", 0.65)  # Set window transparency to 85%
+        # Create a frame to act as the outline
+        
+
+        bar_bg = "#555555"      # Bar background: pure black
+        btn_bg = "#0b796f"      # Button background: dark gray
+        btn_fg = "#ffffff"      # Button foreground (text): white
+        btn_hover = "#026359"   # Button background on hover: slightly lighter dark gray
+        btn_pressed = "#013d37" # Button background when pressed: medium gray
 
         frame = tk.Frame(root, bg=bar_bg, padx=5, pady=5)
         frame.pack(fill="both", expand=True)
@@ -193,6 +202,35 @@ class Tracker:
 
         quit_btn = ttk.Button(frame, text="✕", command=root.destroy, style="Dark.TButton", width=3)
         quit_btn.pack(side="left", padx=3)
+
+        # Dropdown menu beside the buttons
+        options = ["Outline", "Step-by-Step", "In-Depth"]
+        self.selected_option = tk.StringVar(root)
+        self.selected_option.set(options[0])  # Set a default value
+
+        dropdown = tk.OptionMenu(frame, self.selected_option, *options)
+        dropdown.pack(side="left", padx=(10, 0))
+
+        # Example function to get the selected value (you can use this elsewhere)
+        def get_selection():
+            print("Selected:", self.selected_option.get())
+
+        # Keyboard shortcuts
+        def on_shortcut(event):
+            if (event.state & 0x04) and (event.state & 0x08):  # Command + Option (on Mac)
+                if event.keysym.lower() == "r":
+                    self.start_listening()
+                elif event.keysym.lower() == "p":
+                    self.stop_listening()
+                elif event.keysym.lower() == "q":
+                    root.destroy()
+
+        root.bind_all("<KeyPress>", on_shortcut)
+
+        dropdown = tk.OptionMenu
+        # # Add progress bar below the 3 buttons
+        # progressbar = customtkinter.CTkProgressBar(master=frame)
+        # progressbar.pack(fill="x", padx=10, pady=(10, 0))
 
         self.poll_queue()
 
@@ -235,8 +273,7 @@ if __name__ == "__main__":
     root.mainloop()
 
     # process = multiprocessing.Process(target=input_listener, args=(queue,))
-    # process.start() aaa
-    
+    # process.start()
     
 
     # input_listener(queue, CohereAgent(os.getenv("COHERE_API_KEY")) )
