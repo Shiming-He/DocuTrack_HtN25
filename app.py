@@ -32,6 +32,9 @@ class InputTracker:
         self.seperatable_actions("Initial State")
 
     def start_listeners(self):
+        # Send status update to GUI
+        self.queue.put(("status", "recording"))
+        
         # constant screenshot thread
         self.constant_image_taker = ConstantPhotoTacker(self)
         self.constant_image_taker.start()
@@ -47,7 +50,6 @@ class InputTracker:
         self.keyboard_listener.join()
         self.mouse_listener.join()
         self.constant_image_taker.join()
-
 
     def remove_all_images(self, first_part=None):
         if first_part is None:
@@ -142,7 +144,6 @@ class ConstantPhotoTacker(threading.Thread):
 
 # process wrapper
 def input_listener(queue):
-
     cohere_agent = CohereAgent(os.getenv("COHERE_API_KEY"))
     tracker = InputTracker(queue, cohere_agent)
     tracker.start_listeners()  # Start all threads inside the child process
@@ -154,13 +155,15 @@ class Tracker:
         self.queue = queue
         self.process = None
         self.out_dir = "out"
+        self.current_status = "idle"
 
         self.cohere_agent = cohere_agent
 
         root.overrideredirect(True)
         root.attributes("-topmost", True)
 
-        window_width = 240
+        # Increased window width to accommodate the new download button
+        window_width = 380
         window_height = 50
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -169,9 +172,7 @@ class Tracker:
         root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         root.attributes("-alpha", 0.65)  # Set window transparency to 85%
-        # Create a frame to act as the outline
         
-
         bar_bg = "#555555"      # Bar background: pure black
         btn_bg = "#0b796f"      # Button background: dark gray
         btn_fg = "#ffffff"      # Button foreground (text): white
@@ -194,22 +195,45 @@ class Tracker:
                   background=[("active", btn_hover), ("pressed", btn_pressed)],
                   foreground=[("active", btn_fg), ("pressed", btn_fg)])
 
-        start_btn = ttk.Button(frame, text="▶", command=self.start_listening, style="Dark.TButton", width=3)
+        # Left side frame for buttons
+        button_frame = tk.Frame(frame, bg=bar_bg)
+        button_frame.pack(side="left")
+
+        start_btn = ttk.Button(button_frame, text="▶", command=self.start_listening, style="Dark.TButton", width=3)
         start_btn.pack(side="left", padx=3)
 
-        stop_btn = ttk.Button(frame, text="■", command=self.stop_listening, style="Dark.TButton", width=3)
+        stop_btn = ttk.Button(button_frame, text="■", command=self.stop_listening, style="Dark.TButton", width=3)
         stop_btn.pack(side="left", padx=3)
 
-        quit_btn = ttk.Button(frame, text="✕", command=root.destroy, style="Dark.TButton", width=3)
+        download_btn = ttk.Button(button_frame, text="⬇", command=self.download_results, style="Dark.TButton", width=3)
+        download_btn.pack(side="left", padx=3)
+
+        quit_btn = ttk.Button(button_frame, text="✕", command=root.destroy, style="Dark.TButton", width=3)
         quit_btn.pack(side="left", padx=3)
 
-        # Dropdown menu beside the buttons
+        # Status text widget
+        self.status_text = tk.Text(frame, 
+                                   height=1, 
+                                   width=10,
+                                   bg="#333333", 
+                                   fg="#ffffff",
+                                   font=("Arial", 10),
+                                   relief="flat",
+                                   bd=0,
+                                   padx=5,
+                                   pady=8,
+                                   wrap="none")
+        self.status_text.pack(side="left", padx=(10, 5), fill="y")
+        self.status_text.insert("1.0", "idle")
+        self.status_text.config(state="disabled")  # Make it read-only
+
+        # Dropdown menu
         options = ["Outline", "Step-by-Step", "In-Depth"]
         self.selected_option = tk.StringVar(root)
         self.selected_option.set(options[0])  # Set a default value
 
         dropdown = tk.OptionMenu(frame, self.selected_option, *options)
-        dropdown.pack(side="left", padx=(10, 0))
+        dropdown.pack(side="left", padx=(5, 0))
 
         # Example function to get the selected value (you can use this elsewhere)
         def get_selection():
@@ -222,20 +246,36 @@ class Tracker:
                     self.start_listening()
                 elif event.keysym.lower() == "p":
                     self.stop_listening()
+                elif event.keysym.lower() == "d":
+                    self.download_results()
                 elif event.keysym.lower() == "q":
                     root.destroy()
 
         root.bind_all("<KeyPress>", on_shortcut)
 
-        dropdown = tk.OptionMenu
-        # # Add progress bar below the 3 buttons
-        # progressbar = customtkinter.CTkProgressBar(master=frame)
-        # progressbar.pack(fill="x", padx=10, pady=(10, 0))
-
         self.poll_queue()
+
+    def update_status(self, status):
+        """Update the status text widget with new status"""
+        self.current_status = status
+        self.status_text.config(state="normal")
+        self.status_text.delete("1.0", "end")
+        self.status_text.insert("1.0", status)
+        self.status_text.config(state="disabled")
+        
+        # Optional: Change color based on status
+        color_map = {
+            "idle": "#ffffff",
+            "recording": "#00ff00",
+            "processing": "#ffaa00",
+            "downloading": "#00aaff"
+        }
+        if status in color_map:
+            self.status_text.config(fg=color_map[status])
 
     def start_listening(self):
         if not self.process:
+            self.update_status("starting...")
             os.makedirs(self.out_dir, exist_ok=True)
             for f in glob.glob(os.path.join(self.out_dir, "*")):
                 if os.path.isfile(f):
@@ -246,20 +286,74 @@ class Tracker:
 
     def stop_listening(self):
         if self.process:
+            self.update_status("processing")
             self.process.terminate()
             self.process = None
             print("InputTracker stopped.")
+            
+            # Run processing in a separate thread to avoid blocking the GUI
+            processing_thread = threading.Thread(target=self._process_results)
+            processing_thread.start()
+
+    def download_results(self):
+        """Handle download button click"""
+        self.update_status("downloading")
+        
+        # Run download in a separate thread to avoid blocking the GUI
+        download_thread = threading.Thread(target=self._download_results)
+        download_thread.start()
+
+    def _download_results(self):
+        """Download results in a separate thread"""
+        try:
+            # You can customize this function based on what you want to download
+            # For example, you might want to:
+            # 1. Generate and save the LaTeX/PDF
+            # 2. Open a file dialog to let user choose save location
+            # 3. Copy files to a specific download folder
+            # 4. Export screenshots or processed data
+            
+            # Example implementation:
             res = self.cohere_agent.return_final_LATEX()
             latex_to_pdf(res)
+            
+            # You could also add file dialog functionality:
+            # from tkinter import filedialog
+            # save_path = filedialog.asksaveasfilename(defaultextension=".pdf")
+            # if save_path:
+            #     # Save your file to the chosen location
+            
+            print("Download completed successfully")
+            # Update status back to idle when download is complete
+            self.root.after(0, lambda: self.update_status("idle"))
+        except Exception as e:
+            print(f"Error during download: {e}")
+            self.root.after(0, lambda: self.update_status("error"))
 
+    def _process_results(self):
+        """Process results in a separate thread"""
+        try:
+            res = self.cohere_agent.return_final_LATEX()
+            latex_to_pdf(res)
+            # Update status back to idle when processing is complete
+            self.root.after(0, lambda: self.update_status("idle"))
+        except Exception as e:
+            print(f"Error processing results: {e}")
+            self.root.after(0, lambda: self.update_status("error"))
 
     def poll_queue(self):
-        #while not self.queue.empty(): AAAAAAAAAAAAAAaaaaaa
+        while not self.queue.empty():
+            try:
+                msg = self.queue.get_nowait()
+                if isinstance(msg, tuple) and len(msg) == 2:
+                    msg_type, content = msg
+                    if msg_type == "status":
+                        self.update_status(content)
+                else:
+                    print(msg)
+            except:
+                break
         
-
-
-            # msg = self.queue.get()
-            #print(msg)
         self.root.after(100, self.poll_queue)
 
 if __name__ == "__main__":
@@ -267,14 +361,6 @@ if __name__ == "__main__":
     multiprocessing.set_start_method("spawn")  # macOS requirement
     queue = multiprocessing.Manager().Queue()
 
-
     root = tk.Tk()
     app = Tracker(root, queue, CohereAgent(os.getenv("COHERE_API_KEY")))
     root.mainloop()
-
-    # process = multiprocessing.Process(target=input_listener, args=(queue,))
-    # process.start()
-    
-
-    # input_listener(queue, CohereAgent(os.getenv("COHERE_API_KEY")) )
-
