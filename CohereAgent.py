@@ -256,6 +256,11 @@ Instructions:
         return response.text
 
     def return_final_MD(self, difficulty = "intermediate"):
+
+        
+        # run the context generation cohere model
+        single_context_message = self.get_context()
+        
         message = {"role" : "user", "content" : f"""
         You are an AI assistant that generates concise, professional, and well-formatted README.md documentation.
 
@@ -298,12 +303,13 @@ Instructions:
         """}
 
         # Call Cohere chat
-        response = self.co.chat(
-            message=message,
+        response = self.co_client.chat(
+            messages=[self.inital_message] + single_context_message + [message],
             #model="command",
             model="c4ai-aya-vision-8b",
             temperature=0.3
         ) 
+        response.text = validate_latex(response.message.content[0].text)
 
         # Print the explanation
         print(response.text)

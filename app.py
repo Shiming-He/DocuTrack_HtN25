@@ -10,7 +10,7 @@ from pynput import mouse
 import pyautogui
 from PIL import Image
 from CohereAgent import CohereAgent
-from convert import latex_to_pdf
+from convert import latex_to_pdf, download_md
 import customtkinter
 from dotenv import load_dotenv
 
@@ -27,9 +27,14 @@ class InputTracker:
         self.past_2_screenshots = []
         self.shortcut_keys = []
 
+
+        # set the cursor
+        self.cursor_img = Image.open("cursor.png")
+
         self.screen_width, self.screen_height = pyautogui.size()
         self.remove_all_images()
         self.seperatable_actions("Initial State")
+
 
     def start_listeners(self):
         # Send status update to GUI
@@ -90,10 +95,18 @@ class InputTracker:
         self.shortcut_keys = []
 
     def take_screenshot(self, file_name="test_screenshot.png"):
+
+        cursor_pos = pyautogui.position()
         screen_shot = pyautogui.screenshot()
         screen_shot.save(file_name, quality = 1)
+
+
+        # screen_shot.paste(self.cursor_img, (cursor_pos[0] + 100, cursor_pos[1] + 100), self.cursor_img)
+
         low_res_screen_shot = screen_shot.resize((screen_shot.width//2, screen_shot.height//2), Image.LANCZOS)
         low_res_screen_shot.save(file_name, quality = 1)
+
+        
         # self.queue.put("Taken screenshot")
         print("Taken screenshot")
         # print(self.queue.get())
@@ -125,7 +138,11 @@ class InputTracker:
             self.seperatable_actions(f"MOUSE CLICK: {button} ({x/self.screen_width}, {y/self.screen_height})")
 
     def regular_interval_screenshot(self):
+        cursor_pos = pyautogui.position()
         screen_shot = pyautogui.screenshot()
+
+        # screen_shot.paste(self.cursor_img, cursor_pos, self.cursor_img)
+
         if len(self.past_2_screenshots) == 2:
             self.past_2_screenshots = self.past_2_screenshots[1:] + [[screen_shot, time.time()]]
         else:
@@ -136,6 +153,9 @@ class ConstantPhotoTacker(threading.Thread):
     def __init__(self, input_tracker: InputTracker):
         super().__init__()
         self.input_tracker = input_tracker
+
+        # set the cursor
+        # self.cursor_img = Image.open("cursor.png")
 
     def run(self):
         while True:
@@ -156,6 +176,7 @@ class Tracker:
         self.process = None
         self.out_dir = "out"
         self.current_status = "idle"
+        self.res = None
 
         self.cohere_agent = cohere_agent
 
@@ -163,7 +184,7 @@ class Tracker:
         root.attributes("-topmost", True)
 
         # Increased window width to accommodate the new download button
-        window_width = 380
+        window_width = 500
         window_height = 50
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -234,6 +255,14 @@ class Tracker:
 
         dropdown = tk.OptionMenu(frame, self.selected_option, *options)
         dropdown.pack(side="left", padx=(5, 0))
+
+        # file type Dropdown menu
+        file_options = ["LATEX", ".md"]
+        self.selected_file_option = tk.StringVar(root)
+        self.selected_file_option.set(file_options[0])  # Set a default value
+
+        file_dropdown = tk.OptionMenu(frame, self.selected_file_option, *file_options)
+        file_dropdown.pack(side="left", padx=(5, 0))
 
         # Keyboard shortcuts
         def on_shortcut(event):
@@ -315,8 +344,13 @@ class Tracker:
             # 4. Export screenshots or processed data
             
             # Example implementation:
-            res = self.cohere_agent.return_final_LATEX(self.get_selection())
-            latex_to_pdf(res)
+            if self.res:
+                # res = self.cohere_agent.return_final_LATEX(self.get_selection())
+                if self.selected_file_option.get() == "LATEX":
+                    latex_to_pdf(self.res)
+                elif self.selected_file_option.get() == ".md":
+                    download_md(self.res)
+
             
             # You could also add file dialog functionality:
             # from tkinter import filedialog
@@ -334,8 +368,13 @@ class Tracker:
     def _process_results(self):
         """Process results in a separate thread"""
         try:
-            res = self.cohere_agent.return_final_LATEX()
-            latex_to_pdf(res)
+            
+            if self.selected_file_option.get() == "LATEX":
+                self.res = self.cohere_agent.return_final_LATEX()
+            elif self.selected_file_option.get() == ".md":
+                self.res = self.cohere_agent.return_final_MD()
+            
+            # latex_to_pdf(res)
             # Update status back to idle when processing is complete
             self.root.after(0, lambda: self.update_status("idle"))
         except Exception as e:
