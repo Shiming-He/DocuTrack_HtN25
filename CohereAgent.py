@@ -197,7 +197,7 @@ Instructions:
 
 
         message = {"role" : "user", "content" : f"""
-        Now fill in this LaTeX template based on the sets that you have recieved from the user. This is documentation based on what the user completed:
+        Now fill in this LaTeX template based on the sets that you have recieved from the user. This is documentation based on what the user completed, written in the second person imperative. These are meant to be instructions. Do not recite what "The User" did; instead, tell the user directly what to do.
 
         The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
         For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
@@ -208,8 +208,9 @@ Instructions:
         - Do not just simply list the actions, provide concise explanation/interpretation for what each step means.
         - Conclusion should be only about the instructions, not this program. 
         - Write as if informing the reader (2nd person)
-        - Do not state mouse coordinates, just describe the item the mouse is interacting with if needed
-
+        - Do not state extremely specific and irrelevant details: for example, mouse coordinates - just describe the item the mouse is interacting with if needed
+        - Do not use unsure language. Write like an instruction manual or official documentation.
+        
         Rules for images:
         - You must use at 1 image in the document for every assocated action. Match up images to their associated action/step if it makes it easier to follow.
         - Here are the image files: {files}.
