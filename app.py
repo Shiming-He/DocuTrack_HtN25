@@ -180,6 +180,10 @@ class Tracker:
 
         self.cohere_agent = cohere_agent
 
+        # Drag functionality variables
+        self.drag_data = {"x": 0, "y": 0}
+        self.is_dragging = False
+
         root.overrideredirect(True)
         root.attributes("-topmost", True)
 
@@ -192,7 +196,7 @@ class Tracker:
         y = screen_height - window_height - 70  # 60px margin from bottom
         root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-        root.attributes("-alpha", 0.65)  # Set window transparency to 85%
+        root.attributes("-alpha", 0.95)  # Set window transparency to 85%
         
         bar_bg = "#555555"      # Bar background: pure black
         btn_bg = "#0b796f"      # Button background: dark gray
@@ -200,8 +204,14 @@ class Tracker:
         btn_hover = "#026359"   # Button background on hover: slightly lighter dark gray
         btn_pressed = "#013d37" # Button background when pressed: medium gray
 
-        frame = tk.Frame(root, bg=bar_bg, padx=5, pady=5)
-        frame.pack(fill="both", expand=True)
+        # Main frame with drag functionality
+        self.frame = tk.Frame(root, bg=bar_bg, padx=5, pady=5, cursor="hand2")
+        self.frame.pack(fill="both", expand=True)
+
+        # Bind drag events to the main frame
+        self.frame.bind("<Button-1>", self.start_drag)
+        self.frame.bind("<B1-Motion>", self.on_drag)
+        self.frame.bind("<ButtonRelease-1>", self.stop_drag)
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -217,8 +227,13 @@ class Tracker:
                   foreground=[("active", btn_fg), ("pressed", btn_fg)])
 
         # Left side frame for buttons
-        button_frame = tk.Frame(frame, bg=bar_bg)
+        button_frame = tk.Frame(self.frame, bg=bar_bg)
         button_frame.pack(side="left")
+
+        # Bind drag events to button frame too
+        button_frame.bind("<Button-1>", self.start_drag)
+        button_frame.bind("<B1-Motion>", self.on_drag)
+        button_frame.bind("<ButtonRelease-1>", self.stop_drag)
 
         start_btn = ttk.Button(button_frame, text="▶", command=self.start_listening, style="Dark.TButton", width=3)
         start_btn.pack(side="left", padx=3)
@@ -232,8 +247,8 @@ class Tracker:
         quit_btn = ttk.Button(button_frame, text="✕", command=root.destroy, style="Dark.TButton", width=3)
         quit_btn.pack(side="left", padx=3)
 
-        # Status text widget
-        self.status_text = tk.Text(frame, 
+        # Status text widget with drag functionality
+        self.status_text = tk.Text(self.frame, 
                                    height=1, 
                                    width=10,
                                    bg="#333333", 
@@ -243,18 +258,29 @@ class Tracker:
                                    bd=0,
                                    padx=5,
                                    pady=8,
-                                   wrap="none")
+                                   wrap="none",
+                                   cursor="hand2")
         self.status_text.pack(side="left", padx=(10, 5), fill="y")
         self.status_text.insert("1.0", "idle")
         self.status_text.config(state="disabled")  # Make it read-only
+
+        # Bind drag events to status text
+        self.status_text.bind("<Button-1>", self.start_drag)
+        self.status_text.bind("<B1-Motion>", self.on_drag)
+        self.status_text.bind("<ButtonRelease-1>", self.stop_drag)
 
         # Dropdown menu
         options = ["Beginner", "Intermediate", "Advanced"]
         self.selected_option = tk.StringVar(root)
         self.selected_option.set(options[0])  # Set a default value
 
-        dropdown = tk.OptionMenu(frame, self.selected_option, *options)
-        dropdown.pack(side="left", padx=(5, 0))
+        self.dropdown = tk.OptionMenu(self.frame, self.selected_option, *options)
+        self.dropdown.pack(side="left", padx=(5, 0))
+        
+        # Bind drag events to dropdown (though it's less intuitive to drag from here)
+        self.dropdown.bind("<Button-1>", self.start_drag_dropdown)
+        self.dropdown.bind("<B1-Motion>", self.on_drag)
+        self.dropdown.bind("<ButtonRelease-1>", self.stop_drag)
 
         # file type Dropdown menu
         file_options = ["LATEX", ".md"]
@@ -280,6 +306,55 @@ class Tracker:
 
         self.poll_queue()
     
+    def start_drag(self, event):
+        """Start dragging the window"""
+        self.is_dragging = True
+        self.drag_data["x"] = event.x_root
+        self.drag_data["y"] = event.y_root
+        # Change cursor to indicate dragging
+        self.frame.config(cursor="fleur")
+
+    def start_drag_dropdown(self, event):
+        """Special handler for dropdown to prevent conflicts"""
+        # Only start drag if clicking on the dropdown button area, not the menu
+        if not hasattr(event.widget, 'tk') or event.widget.winfo_class() == 'Menubutton':
+            self.start_drag(event)
+
+    def on_drag(self, event):
+        """Handle window dragging"""
+        if self.is_dragging:
+            # Calculate the new position
+            delta_x = event.x_root - self.drag_data["x"]
+            delta_y = event.y_root - self.drag_data["y"]
+            
+            # Get current window position
+            current_x = self.root.winfo_x()
+            current_y = self.root.winfo_y()
+            
+            # Calculate new position
+            new_x = current_x + delta_x
+            new_y = current_y + delta_y
+            
+            # Get screen dimensions to prevent moving window off screen
+            screen_width = self.root.winfo_screenwidth()
+            screen_height = self.root.winfo_screenheight()
+            window_width = self.root.winfo_width()
+            window_height = self.root.winfo_height()
+            
+            # Keep window within screen bounds
+            new_x = max(0, min(new_x, screen_width - window_width))
+            new_y = max(0, min(new_y, screen_height - window_height))
+            
+            # Move the window
+            self.root.geometry(f"+{new_x}+{new_y}")
+            
+            # Update drag data
+            self.drag_data["x"] = event.x_root
+            self.drag_data["y"] = event.y_root
+
+    def stop_drag(self, event):
+        """Stop dragging the window"""
+        self.is_dragging = False
 
     # Example function to get the selected value (you can use this elsewhere)
     def get_selection(self):
