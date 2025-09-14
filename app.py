@@ -228,16 +228,12 @@ class Tracker:
         self.status_text.config(state="disabled")  # Make it read-only
 
         # Dropdown menu
-        options = ["Outline", "Step-by-Step", "In-Depth"]
+        options = ["Beginner", "Intermediate", "Advanced"]
         self.selected_option = tk.StringVar(root)
         self.selected_option.set(options[0])  # Set a default value
 
         dropdown = tk.OptionMenu(frame, self.selected_option, *options)
         dropdown.pack(side="left", padx=(5, 0))
-
-        # Example function to get the selected value (you can use this elsewhere)
-        def get_selection():
-            print("Selected:", self.selected_option.get())
 
         # Keyboard shortcuts
         def on_shortcut(event):
@@ -254,6 +250,11 @@ class Tracker:
         root.bind_all("<KeyPress>", on_shortcut)
 
         self.poll_queue()
+    
+
+    # Example function to get the selected value (you can use this elsewhere)
+    def get_selection(self):
+        return self.selected_option.get()
 
     def update_status(self, status):
         """Update the status text widget with new status"""
@@ -314,7 +315,7 @@ class Tracker:
             # 4. Export screenshots or processed data
             
             # Example implementation:
-            res = self.cohere_agent.return_final_LATEX()
+            res = self.cohere_agent.return_final_LATEX(self.get_selection())
             latex_to_pdf(res)
             
             # You could also add file dialog functionality:
