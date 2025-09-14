@@ -29,7 +29,7 @@ class InputTracker:
 
 
         # set the cursor
-        self.cursor_img = Image.open("cursor.png")
+        #self.cursor_img = Image.open("cursor.png")
 
         self.screen_width, self.screen_height = pyautogui.size()
         self.remove_all_images()
@@ -443,9 +443,10 @@ class Tracker:
     def _process_results(self):
         """Process results in a separate thread"""
         try:
-            
+            files = [f for f in glob.glob(os.path.join(self.out_dir, "*.png"))]
+            print(files)
             if self.selected_file_option.get() == "LATEX":
-                self.res = self.cohere_agent.return_final_LATEX()
+                self.res = self.cohere_agent.return_final_LATEX(files)
             elif self.selected_file_option.get() == ".md":
                 self.res = self.cohere_agent.return_final_MD()
             

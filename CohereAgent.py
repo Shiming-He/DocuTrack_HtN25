@@ -19,7 +19,7 @@ def convert_image_to_base64(image_path):
 
 class CohereAgent:
     
-    def __init__(self, API_KEY, model = "c4ai-aya-vision-32b"):
+    def __init__(self, API_KEY, model = "command-a-vision-07-2025"):
         # init cohere client
         self.co_client = cohere.ClientV2(API_KEY)
         self.model = model
@@ -63,6 +63,7 @@ Instructions:
 - Avoid adding information not present in the explanations.
 - Produce the complete LaTeX output in one response.
 - Do not reference screenshots directly; rely entirely on the provided explanations.
+- At the end of the response, write the file path(s) of the photo(s) relevant to the action performed. The file paths should follow the form out/actions_X.png or out/pre_actions_X.png.
 '''
          } # add the system preset
         
@@ -82,6 +83,7 @@ Instructions:
         # add some data in 
         #print(json.dumps([inital_message]))
         # db_cursor.execute("INSERT INTO agent_messages (messages) VALUES (?)", (json.dumps(inital_message),))
+        # ASLDKMASLDKMALKSDMLAKSMD
 
         db_conn.commit()
         db_conn.close()
@@ -181,11 +183,12 @@ Instructions:
                 model=self.model,
                 temperature=0.5
             )
+            print(response.message.content[0].text)
             return_message.append({"role": "user", "content" : response.message.content[0].text})
         return return_message
 
 
-    def return_final_LATEX(self, difficulty = "intermediate"):
+    def return_final_LATEX(self, files=[], difficulty = "intermediate"):
 
 
         # run the context generation cohere model
@@ -202,11 +205,18 @@ Instructions:
         Here are some specific custom requests for the document
         - Make sure to only output the latex docuemntation with nothing else.
         - For Instructions section, use the enumerate environment to make an ordered list for each action.
-        - You can provide useful images if needed for a clearer explanation
         - Do not just simply list the actions, provide concise explanation/interpretation for what each step means.
         - Conclusion should be only about the instructions, not this program. 
         - Write as if informing the reader (2nd person)
         - Do not state mouse coordinates, just describe the item the mouse is interacting with if needed
+
+        Rules for images:
+        - You must use at 1 image in the document for every assocated action. Match up images to their associated action/step if it makes it easier to follow.
+        - Here are the image files: {files}.
+        - If including, place it right below each corresponding step using:
+        \\begin{{center}}
+            \\includegraphics[width=0.6\\textwidth]{{filename}}
+        \\end{{center}}
 
         TEMPLATE:
         \\documentclass[12pt]{{article}}
@@ -226,7 +236,8 @@ Instructions:
         <write intro here>
 
         \\section*{{Instructions}}
-        <write instructions here>
+        <write intstructions here>
+        {files}
 
         \\section*{{Conclusion}}
         <write conclusion here>
@@ -306,7 +317,7 @@ Instructions:
         response = self.co_client.chat(
             messages=[self.inital_message] + single_context_message + [message],
             #model="command",
-            model="c4ai-aya-vision-8b",
+            model="command-a-vision-07-2025",
             temperature=0.3
         ) 
         response.text = validate_latex(response.message.content[0].text)
