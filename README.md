@@ -3,6 +3,12 @@ Many of us, whether for work or projects, are tasked with creating detailed docu
 
 ---
 
+## 🎥 Demo & Devpost  
+Check out our full demo video and project submission here:  
+👉 [DocuTrack on Devpost](https://devpost.com/software/docutrack-turn-screen-recordings-into-perfect-documentation?ref_content=user-portfolio&ref_feature=in_progress)
+
+---
+
 ## ⚙️ What it does  
 DocuTrack watches your screen, keyboard, and mouse as you set up software, then uses Cohere to write clean step-by-step setup docs in seconds. It:  
 - 🖥️ Captures screenshots every few seconds, with extra captures when keystrokes happen  
@@ -11,6 +17,7 @@ DocuTrack watches your screen, keyboard, and mouse as you set up software, then 
 - 🧠 Offers privacy controls like pause, redact fields, or ignore certain apps  
 
 ---
+
 ## 💻 Use Cases
 - **Setting up a local dev environment**  
   Installing Node.js, VS Code extensions, and configuring environment variables
@@ -28,7 +35,9 @@ DocuTrack watches your screen, keyboard, and mouse as you set up software, then 
   Provisioning a Linux VM, setting up Nginx, and deploying a web app
 
 and a lot more...
---
+
+---
+
 ## 🛠️ How we built it  
 We built a desktop recorder with a Tkinter GUI that lets you start and stop recording, similar to Cluey. While recording, it:  
 - Takes screenshots every few seconds  
