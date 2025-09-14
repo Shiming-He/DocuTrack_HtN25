@@ -11,13 +11,11 @@ Check out our full demo video and project submission here:
 
 ## ⚙️ What it does  
 DocuTrack watches your screen, keyboard, and mouse as you set up software, then uses Cohere to write clean step-by-step setup docs in seconds. It:  
-- 🖥️ Captures screenshots every few seconds, with extra captures when keystrokes happen  
-- ✍️ Uses Cohere to read screenshots from before, during, and after a keystroke to figure out what action was taken  
-- 📄 Writes documentation with screenshots and explanations step by step, then outputs in LaTeX (main format), Markdown, or plain text  
-- 🧠 Offers privacy controls like pause, redact fields, or ignore certain apps  
+- 🖥️ Captures screenshots twice a second, with extra captures when important actions happen  
+- ✍️ Uses Cohere to interpret screenshots from before, and after actions to figure out what action was taken  
+- 📄 Writes documentation with screenshots and step by step explanations, before formating outputs in LaTeX (main format), or Markdown  
 
 ---
-
 ## 💻 Use Cases
 - **Setting up a local dev environment**  
   Installing Node.js, VS Code extensions, and configuring environment variables
@@ -35,34 +33,31 @@ DocuTrack watches your screen, keyboard, and mouse as you set up software, then 
   Provisioning a Linux VM, setting up Nginx, and deploying a web app
 
 and a lot more...
-
----
-
+--
 ## 🛠️ How we built it  
 We built a desktop recorder with a Tkinter GUI that lets you start and stop recording, similar to Cluey. While recording, it:  
-- Takes screenshots every few seconds  
-- Flags keystrokes as significant triggers for potential setup steps  
-- Groups screenshots before, during, and after each keystroke  
-- Sends these grouped screenshots to Cohere, which interprets what happened on screen and writes it as LaTeX with the related screenshot saved alongside  
+- Takes screenshots twice a second  
+- Flags important keystrokes as triggers for potential setup steps  
+- Groups screenshots before, and after each keystroke  
+- Sends these grouped screenshots to Cohere, which interprets and understands the user events
 
-When the user stops recording, the tool compiles all steps and exports a documentation file in LaTeX (main), Markdown, or plain text.  
+When the user stops recording, the tool compiles all the recorded steps to create a concise and detailed a documentation file in LaTeX (main), or Markdown with screenshots to provide quick and good documentation for anyone.
 
 We also built:  
-- A backend to handle Cohere generation and export formatting  
-- A VS Code extension that lets you record directly inside your editor  
+- A Cohere multi-chat design structure to more effectively interpret and understand the events completed by the user
 
 ---
 
 ## 🧩 Challenges we ran into  
 - Deciding how often to capture screenshots without creating too much data  
 - Getting Cohere to interpret grouped screenshots reliably  
+- Creating a Cohere chat architecture to effectively interpret and document user actions
 - Making sure the generated steps were accurate and readable  
 
 ---
 
 ## 🏅 Accomplishments that we're proud of  
 - Built a full pipeline from raw screen captures to polished LaTeX docs  
-- Created an editor extension that works inside VS Code  
 - Made the output look good enough to publish directly in GitHub repos  
 
 ---
@@ -70,6 +65,7 @@ We also built:
 ## 📚 What we learned  
 We learned how to:  
 - Structure prompts for predictable AI output  
+- Design a systemic multi-chat architecture for creating efficient and effective results.
 - Link screenshots and keystrokes into logical steps  
 - Use embeddings for step deduplication and linking  
 - Build privacy safe recorders that users can trust  
@@ -82,12 +78,3 @@ We plan to:
 - Sync directly to GitHub, Confluence, and Notion  
 - Build a browser extension for recording web based setup flows  
 - Support real time doc previews while recording  
-
----
-
-## 🏆 Awards & Tracks We Qualify For  
-- **Warp:** Best Developer Tool – Tools that improve developer experience  
-- **Y Combinator (Unicorn Prize):** Startup-potential projects  
-- **Cohere:** Best Use of Cohere API – Multimodal AI apps (text, images, workflows)  
-- **Cua:** Best Computer-Use Agent – Build an agent for desktop/browser control  
-- **Graphite:** Engineering Dream Team – Showcase great engineering practices and teamwork  
