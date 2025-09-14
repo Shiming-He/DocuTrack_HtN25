@@ -179,7 +179,7 @@ Instructions:
                 messages=[self.actions_system_message, message],
                 #model="command",
                 model=self.model,
-                temperature=0.8
+                temperature=0.5
             )
             return_message.append({"role": "user", "content" : response.message.content[0].text})
         return return_message
