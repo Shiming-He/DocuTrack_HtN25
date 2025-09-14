@@ -199,6 +199,9 @@ class Tracker:
     def start_listening(self):
         if not self.process:
             os.makedirs(self.out_dir, exist_ok=True)
+            for f in glob.glob(os.path.join(self.out_dir, "*")):
+                if os.path.isfile(f):
+                    os.remove(f)
             self.process = multiprocessing.Process(target=input_listener, args=(self.queue,))
             self.process.start()
             print("InputTracker started.")
