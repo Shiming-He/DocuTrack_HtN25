@@ -49,7 +49,7 @@ Instructions:
             }
 
 
-        inital_message = {
+        self.inital_message = {
             "role" :"system", "content" : '''You have received a series of detailed explanations describing user actions from multiple sets of screenshots and prior input. Your task is to generate a full LaTeX document documenting all sets in chronological order, based on these explanations.
 
 Instructions:
@@ -81,7 +81,7 @@ Instructions:
                                """)
         # add some data in 
         #print(json.dumps([inital_message]))
-        db_cursor.execute("INSERT INTO agent_messages (messages) VALUES (?)", (json.dumps(inital_message),))
+        # db_cursor.execute("INSERT INTO agent_messages (messages) VALUES (?)", (json.dumps(inital_message),))
 
         db_conn.commit()
         db_conn.close()
@@ -105,6 +105,9 @@ Instructions:
         
         db_conn.close()
         return return_val
+    
+
+    # def get_single_messages
 
 
     def add_keystroke_action_set(self, action, action_num):
@@ -153,20 +156,43 @@ Instructions:
                     ]
                 }
             
+            # co_client = cohere.ClientV2(self.API_KEY)
+
+            # response = co_client.chat(
+            #     messages=[self.actions_system_message, single_set_messgae],
+            #     #model="command",
+            #     model=self.model,
+            #     temperature=0.8
+            # )
+
+
+            # self.save_message({"role": "user", "content" : response.message.content[0].text})
+            self.save_message(single_set_messgae)
+            # print(len(self.list_of_messages))
+
+    def get_context(self):
+        return_message = []
+        for message in self.get_messages():
             co_client = cohere.ClientV2(self.API_KEY)
 
             response = co_client.chat(
-                messages=[self.actions_system_message, single_set_messgae],
+                messages=[self.actions_system_message, message],
                 #model="command",
                 model=self.model,
                 temperature=0.8
             )
+            return_message.append({"role": "user", "content" : response.message.content[0].text})
+        return return_message
 
-
-            self.save_message({"role": "user", "content" : response.message.content[0].text})
-            # print(len(self.list_of_messages))
 
     def return_final_LATEX(self, difficulty = "intermediate"):
+
+
+        # run the context generation cohere model
+        single_context_message = self.get_context()
+
+
+
         message = {"role" : "user", "content" : f"""
         Now fill in this LaTeX template based on the sets that you have recieved from the user. This is documentation based on what the user completed:
 
@@ -209,7 +235,7 @@ Instructions:
 
         """}
 
-        self.save_message(message)
+        # self.save_message(message)
 
         # print(len(self.list_of_messages))
 
@@ -217,7 +243,7 @@ Instructions:
         # print(self.get_messages())
         # co_client = cohere.ClientV2(API_KEY)
         response = self.co_client.chat(
-            messages=self.get_messages(),
+            messages=[self.inital_message] + single_context_message + [message],
             #model="command",
             model=self.model,
             temperature=0.3
