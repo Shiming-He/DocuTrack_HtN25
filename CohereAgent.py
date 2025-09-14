@@ -24,6 +24,30 @@ class CohereAgent:
         self.co_client = cohere.ClientV2(API_KEY)
         self.model = model
         self.API_KEY = API_KEY
+
+        self.actions_system_message = {
+                "role" : "system",
+                "content" : """You are given a single set of user actions, consisting of two screenshots taken about 0.5 seconds apart and a record of recent mouse clicks and keyboard input. The first screenshot is the earliest, the second is the latest.
+
+Your role: Analyze this set to produce a detailed and structured explanation of what occurred, including all relevant context, so it can be used later to generate a LaTeX document. The explanation should be clear, concise, and complete enough for someone else to understand the sequence of user actions and their effects.
+
+Instructions:
+- Compare earliest and latest screenshots carefully to identify changes.
+- Include all relevant observations:
+  - Cursor movements: starting/ending positions, icon changes
+  - Active window/tab changes
+  - Text changes: per-character typing, block insertion, paste, or autocomplete
+  - Selections or dragged items
+  - Scrolling or content shifts
+  - Menus, dialogs, tooltips, or hover states
+  - Prior mouse or keyboard input that likely caused the changes
+- Include your inference of the most likely user action(s) and any timing/plausibility notes.
+- Present the explanation as a concise paragraph or structured sentences (3–6 sentences recommended).
+- Do not generate LaTeX at this stage.
+- Focus only on this single set; do not reference other sets."""
+            }
+
+
         inital_message = {
             "role" :"system", "content" : '''You have received a series of detailed explanations describing user actions from multiple sets of screenshots and prior input. Your task is to generate a full LaTeX document documenting all sets in chronological order, based on these explanations.
 
@@ -87,27 +111,27 @@ Instructions:
         if action_num > 0:
             #print('hi')
             # add the set of messages that correspond to the actions that occured
-            system_message = {
-                "role" : "system",
-                "content" : """You are given a single set of user actions, consisting of two screenshots taken about 0.5 seconds apart and a record of recent mouse clicks and keyboard input. The first screenshot is the earliest, the second is the latest.
+#             system_message = {
+#                 "role" : "system",
+#                 "content" : """You are given a single set of user actions, consisting of two screenshots taken about 0.5 seconds apart and a record of recent mouse clicks and keyboard input. The first screenshot is the earliest, the second is the latest.
 
-Your role: Analyze this set to produce a detailed and structured explanation of what occurred, including all relevant context, so it can be used later to generate a LaTeX document. The explanation should be clear, concise, and complete enough for someone else to understand the sequence of user actions and their effects.
+# Your role: Analyze this set to produce a detailed and structured explanation of what occurred, including all relevant context, so it can be used later to generate a LaTeX document. The explanation should be clear, concise, and complete enough for someone else to understand the sequence of user actions and their effects.
 
-Instructions:
-- Compare earliest and latest screenshots carefully to identify changes.
-- Include all relevant observations:
-  - Cursor movements: starting/ending positions, icon changes
-  - Active window/tab changes
-  - Text changes: per-character typing, block insertion, paste, or autocomplete
-  - Selections or dragged items
-  - Scrolling or content shifts
-  - Menus, dialogs, tooltips, or hover states
-  - Prior mouse or keyboard input that likely caused the changes
-- Include your inference of the most likely user action(s) and any timing/plausibility notes.
-- Present the explanation as a concise paragraph or structured sentences (3–6 sentences recommended).
-- Do not generate LaTeX at this stage.
-- Focus only on this single set; do not reference other sets."""
-            }
+# Instructions:
+# - Compare earliest and latest screenshots carefully to identify changes.
+# - Include all relevant observations:
+#   - Cursor movements: starting/ending positions, icon changes
+#   - Active window/tab changes
+#   - Text changes: per-character typing, block insertion, paste, or autocomplete
+#   - Selections or dragged items
+#   - Scrolling or content shifts
+#   - Menus, dialogs, tooltips, or hover states
+#   - Prior mouse or keyboard input that likely caused the changes
+# - Include your inference of the most likely user action(s) and any timing/plausibility notes.
+# - Present the explanation as a concise paragraph or structured sentences (3–6 sentences recommended).
+# - Do not generate LaTeX at this stage.
+# - Focus only on this single set; do not reference other sets."""
+#             }
             
             single_set_messgae = {"role" : "user", "content" :
                      [
@@ -131,7 +155,7 @@ Instructions:
             co_client = cohere.ClientV2(self.API_KEY)
 
             response = co_client.chat(
-                messages=[system_message, single_set_messgae],
+                messages=[self.actions_system_message, single_set_messgae],
                 #model="command",
                 model=self.model,
                 temperature=0.2
