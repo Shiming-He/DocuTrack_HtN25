@@ -19,3 +19,9 @@ def latex_to_pdf(latex_code, output_filename="output.pdf", out_dir="out"):
     pypandoc.convert_file(tex_path, "pdf", outputfile=pdf_path, extra_args=["--standalone"])
 
     print(f"PDF saved at: {pdf_path}")
+
+
+def download_md(md_text, output_filename="output.md", out_dir="out"):
+
+    with open(os.path.join(out_dir, "README.md"), "w", encoding="utf-8") as f:
+        f.write(md_text)
