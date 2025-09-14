@@ -94,7 +94,9 @@ class InputTracker:
         low_res_screen_shot.save(file_name, quality = 1)
         # self.queue.put("Taken screenshot")
         print("Taken screenshot")
-        # print(self.queue.get())
+        # print(self.queue.get()) aaasdmlkamsdklasd
+
+
 
     def on_press(self, key):
         try:
@@ -230,7 +232,8 @@ if __name__ == "__main__":
     root.mainloop()
 
     # process = multiprocessing.Process(target=input_listener, args=(queue,))
-    # process.start()
+    # process.start() aaa
+    
     
 
     # input_listener(queue, CohereAgent(os.getenv("COHERE_API_KEY")) )

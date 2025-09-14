@@ -1,4 +1,4 @@
-import subprocess
+import pypandoc
 import os
 
 def latex_to_pdf(latex_code, output_filename="output.pdf", out_dir="out"):
@@ -15,31 +15,7 @@ def latex_to_pdf(latex_code, output_filename="output.pdf", out_dir="out"):
     with open(tex_path, "w") as f:
         f.write(latex_code)
 
-    # Run pdflatex with out_dir as working directory
-    try:
-        subprocess.run(
-            ["pdflatex", "-interaction=nonstopmode", base_name + ".tex"],
-            check=True,
-            cwd=out_dir,  # run inside out/
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-    except subprocess.CalledProcessError as e:
-        print("Error compiling LaTeX:", e.stderr.decode())
-        return None
+    pdf_path = "out/output.pdf"
+    pypandoc.convert_file(tex_path, "pdf", outputfile=pdf_path, extra_args=["--standalone"])
 
-    # Rename/move result
-    # aaaa
-    
-    if os.path.exists(pdf_path):
-        os.rename(pdf_path, final_pdf_path)
-
-        # Cleanup auxiliary files
-        for ext in [".aux", ".log", ".tex"]:
-            aux_file = os.path.join(out_dir, base_name + ext)
-            if os.path.exists(aux_file):
-                os.remove(aux_file)
-
-        return final_pdf_path
-
-    return None
+    print(f"PDF saved at: {pdf_path}")
