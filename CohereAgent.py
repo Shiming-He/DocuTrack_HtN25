@@ -44,7 +44,8 @@ Instructions:
 - Include your inference of the most likely user action(s) and any timing/plausibility notes.
 - Present the explanation as a concise paragraph or structured sentences (3–6 sentences recommended).
 - Do not generate LaTeX at this stage.
-- Focus only on this single set; do not reference other sets."""
+- Focus only on this single set; do not reference other sets.
+- Do not describe anything that has not changed from before and after the images (for example existing code, background applications, etc.)"""
             }
 
 
@@ -56,7 +57,7 @@ Instructions:
 - Maintain chronological order of the sets.
 - Clearly label each set in the document (e.g., "Set 1", "Set 2", etc.).
 - Include all relevant details about cursor movements, selections, text input, scrolls, menu/dialog interactions, and inferred user actions.
-- Ensure the LaTeX document is well-structured, clear, and concise.
+- Ensure the generated document is well-structured, clear, and concise.
 - Include sections, enumerated lists, or subsections for readability.
 - Format code blocks, terminal output, or text input using appropriate LaTeX environments (e.g., verbatim or lstlisting) if mentioned in the explanations.
 - Avoid adding information not present in the explanations.
@@ -158,7 +159,7 @@ Instructions:
                 messages=[self.actions_system_message, single_set_messgae],
                 #model="command",
                 model=self.model,
-                temperature=0.2
+                temperature=0.8
             )
 
 
@@ -175,8 +176,11 @@ Instructions:
         Here are some specific custom requests for the document
         - Make sure to only output the latex docuemntation with nothing else.
         - For Instructions section, use the enumerate environment to make an ordered list for each action.
+        - You can provide useful images if needed for a clearer explanation
         - Do not just simply list the actions, provide concise explanation/interpretation for what each step means.
         - Conclusion should be only about the instructions, not this program. 
+        - Write as if informing the reader (2nd person)
+        - Do not state mouse coordinates, just describe the item the mouse is interacting with if needed
 
         TEMPLATE:
         \\documentclass[12pt]{{article}}
@@ -216,7 +220,7 @@ Instructions:
             messages=self.get_messages(),
             #model="command",
             model=self.model,
-            temperature=0.25
+            temperature=0.3
         )
 
         response.text = validate_latex(response.message.content[0].text)
@@ -233,6 +237,9 @@ Instructions:
         The following parameter is the difficulty. You should structure the documentation based on how knowledgable the intended reader is. 
         For example beginner will be descriptive, and cover more trivial concepts, and hard will be more concise and short, while intermediate will be between the two:{difficulty}
 
+        Custom requests:
+        - Write as if informing the reader (2nd person)
+        - Do not state mouse coordinates, just describe the item the mouse is interacting with if needed
 
         Write a README.md file in Markdown format that summarizes the steps. Follow this structure:
 
@@ -269,7 +276,7 @@ Instructions:
             message=message,
             #model="command",
             model="c4ai-aya-vision-8b",
-            temperature=0.25
+            temperature=0.3
         ) 
 
         # Print the explanation
