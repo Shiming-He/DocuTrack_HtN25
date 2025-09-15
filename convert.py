@@ -2,6 +2,7 @@ import pypandoc
 import os
 
 def latex_to_pdf(latex_code, output_filename="output.pdf", out_dir="out"):
+    latex_code = latex_code.replace("```latex", "")
     # Ensure out/ exists
     os.makedirs(out_dir, exist_ok=True)
 
