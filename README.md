@@ -7,6 +7,10 @@ Many of us, whether for work or projects, are tasked with creating detailed docu
 Check out our full demo video and project submission here:  
 👉 [DocuTrack on Devpost](https://devpost.com/software/docutrack-turn-screen-recordings-into-perfect-documentation?ref_content=user-portfolio&ref_feature=in_progress)
 
+[Watch on YouTube](https://www.youtube.com/watch?v=Eq9XwJ_5J5s&ab_channel=JoshuaWu)
+
+[![Joshua Wu Video Thumbnail](https://img.youtube.com/vi/Eq9XwJ_5J5s/0.jpg)](https://www.youtube.com/watch?v=Eq9XwJ_5J5s&ab_channel=JoshuaWu)
+
 ---
 
 ## ⚙️ What it does  
